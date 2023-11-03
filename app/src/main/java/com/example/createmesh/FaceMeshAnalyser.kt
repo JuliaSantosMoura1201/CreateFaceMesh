@@ -17,7 +17,6 @@ class FaceMeshAnalyzer : ImageAnalysis.Analyzer {
     var currentImage: InputImage? = null
 
     override fun analyze(imageProxy: ImageProxy) {
-        Log.i("Testeeeee", "analyze")
         val mediaImage = imageProxy.image
         if (mediaImage != null) {
             currentImage =
@@ -28,11 +27,9 @@ class FaceMeshAnalyzer : ImageAnalysis.Analyzer {
     fun process(image: InputImage) {
         detector.process(image)
             .addOnSuccessListener {
-                Log.i("Testeeeee", "success")
                 faceMeshListener?.onSuccess(it)
             }
             .addOnFailureListener {
-                Log.i("Testeeeee", "failure")
                 faceMeshListener?.onFailure()
             }
     }

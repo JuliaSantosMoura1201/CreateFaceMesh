@@ -100,25 +100,6 @@ class CreateMeshActivity : AppCompatActivity() {
         }
     }
 
-    private fun saveJsonInFile(context: Context, json: String, fileName: String) {
-        try {
-            val directory = File(context.getExternalFilesDir(null), "diretorio_json")
-            if (!directory.exists()) {
-                directory.mkdirs()
-            }
-            val file = File(directory, "$fileName.json")
-
-            val outputStream = FileOutputStream(file)
-            outputStream.write(json.toByteArray())
-            outputStream.close()
-            Log.i("Path", file.absolutePath)
-            Toast.makeText(context, "JSON salvo com sucesso em ${file.absolutePath}", Toast.LENGTH_SHORT).show()
-        } catch (e: Exception) {
-            e.printStackTrace()
-            Toast.makeText(context, "Erro ao salvar JSON", Toast.LENGTH_SHORT).show()
-        }
-    }
-
     companion object {
         private const val REQUEST_WRITE_STORAGE_PERMISSION = 1
     }

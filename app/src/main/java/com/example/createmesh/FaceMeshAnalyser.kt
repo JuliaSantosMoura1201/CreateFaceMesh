@@ -12,7 +12,7 @@ class FaceMeshAnalyzer : ImageAnalysis.Analyzer {
 
     var faceMeshListener: FaceMeshListener? = null
 
-    val detector = FaceMeshDetection.getClient()
+    private val detector = FaceMeshDetection.getClient()
 
     var currentImage: InputImage? = null
 

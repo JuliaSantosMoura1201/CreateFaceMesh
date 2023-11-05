@@ -18,8 +18,6 @@ import android.widget.Toast
 import androidx.annotation.RequiresApi
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
-import java.io.File
-import java.io.FileOutputStream
 
 @ExperimentalGetImage
 class CreateMeshActivity : AppCompatActivity() {
@@ -77,7 +75,7 @@ class CreateMeshActivity : AppCompatActivity() {
         Glide.with(this)
             .load(bitmap)
             .into(viewBinding.imageView)
-        viewModel.addToDataSet(bitmap, currentImage)
+        viewModel.addToDataSet(bitmap, currentImage, imageName, isFraud = false)
     }
 
     @RequiresApi(Build.VERSION_CODES.Q)

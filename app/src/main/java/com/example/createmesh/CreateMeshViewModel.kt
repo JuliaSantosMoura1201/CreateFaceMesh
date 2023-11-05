@@ -65,6 +65,6 @@ class CreateMeshViewModel: ViewModel() {
     }
 
     companion object{
-        private const val AMOUNT_OF_FACES = 25
+        private const val AMOUNT_OF_FACES = 36
     }
 }

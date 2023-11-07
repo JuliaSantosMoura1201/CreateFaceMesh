@@ -1,6 +1,5 @@
 package com.example.createmesh
 
-import android.content.Context
 import android.graphics.Bitmap
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
@@ -13,7 +12,6 @@ import com.google.mlkit.vision.facemesh.FaceMesh
 import com.google.mlkit.vision.facemesh.FaceMeshDetection
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import java.lang.Exception
 
 class CreateMeshViewModel: ViewModel() {
 
@@ -31,18 +29,18 @@ class CreateMeshViewModel: ViewModel() {
     private val _jsonFile: MutableLiveData<String> = MutableLiveData()
     val jsonFile: LiveData<String> = _jsonFile
 
-    private fun process(image: InputImage, nextImage: Int, fileName: String, isFraud: Boolean) {
+    private fun process(image: InputImage, nextImage: Int, fileName: String) {
         detector.process(image)
-            .addOnSuccessListener{ handleSuccess(it, nextImage, fileName, isFraud) }
+            .addOnSuccessListener{ handleSuccess(it, nextImage, fileName) }
             .addOnFailureListener { handleFailure(it, nextImage) }
     }
 
-    private fun handleSuccess(faceMeshes: List<FaceMesh>, nextImage: Int, fileName: String, isFraud: Boolean){
+    private fun handleSuccess(faceMeshes: List<FaceMesh>, nextImage: Int, fileName: String){
         customFaceMeshList.addAll(faceMeshes.map { faceMesh ->
-            CustomFaceMesh(fileName, faceMesh, isFraud) }
+            CustomFaceMesh(fileName, faceMesh, nextImage > AMOUNT_OF_GENUINE_FACES - 1) }
         )
 
-        if(nextImage == AMOUNT_OF_FACES){
+        if(nextImage == TOTAL_FACES){
             _jsonFile.value = gson.toJson(customFaceMeshList)
         } else{
             _success.value = nextImage
@@ -50,21 +48,24 @@ class CreateMeshViewModel: ViewModel() {
     }
 
     private fun handleFailure(exception: Exception, nextImage: Int){
-        if(nextImage == AMOUNT_OF_FACES){
+        if(nextImage == TOTAL_FACES){
             _jsonFile.value = gson.toJson(customFaceMeshList)
         } else{
             _failure.value = Pair(nextImage, exception)
         }
     }
 
-    fun addToDataSet(bitmap: Bitmap, currentImage: Int, fileName: String, isFraud: Boolean = false){
+    fun addToDataSet(bitmap: Bitmap, currentImage: Int, fileName: String){
         viewModelScope.launch {
             delay(100L)
-            process(InputImage.fromBitmap(bitmap, 0), currentImage + 1, fileName, isFraud)
+            process(InputImage.fromBitmap(bitmap, 0), currentImage + 1, fileName)
         }
     }
 
     companion object{
-        private const val AMOUNT_OF_FACES = 36
+        private const val AMOUNT_OF_GENUINE_FACES = 35
+        private const val AMOUNT_OF_FRAUD_FACES = 25
+
+        private const val TOTAL_FACES = AMOUNT_OF_GENUINE_FACES + AMOUNT_OF_FRAUD_FACES - 1
     }
 }

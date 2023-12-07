@@ -20,12 +20,13 @@ import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import com.bumptech.glide.Glide
 import com.example.face2face.databinding.ActivityMainBinding
-import java.io.File
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 
 @ExperimentalGetImage
 class CreateMeshActivity : AppCompatActivity() {
-
     private lateinit var viewBinding: ActivityMainBinding
     private val viewModel: CreateMeshViewModel = CreateMeshViewModel()
 
@@ -40,23 +41,37 @@ class CreateMeshActivity : AppCompatActivity() {
             ActivityCompat.requestPermissions(this, arrayOf(WRITE_EXTERNAL_STORAGE), REQUEST_WRITE_STORAGE_PERMISSION)
         }
 
+        viewModel.obterTokenDeAcesso(applicationContext)
 
-        processCurrentImage(currentImage = 0)
 
-        viewModel.success.observe(this){
-            Log.i("Current Image - success ", it.toString())
-            processCurrentImage(it)
+        viewBinding.listFiles.setOnClickListener {
+            viewModel.googleDriveList.clear()
+            CoroutineScope(Dispatchers.IO).launch {
+                viewModel.getFilesListFromGoogleDrive("1ld0h6bCw73PoAfcqCdQtNssIvYsVZuYk")
+            }
         }
 
-        viewModel.failure.observe(this){
-            Log.i("Current Image - failure", it.first.toString())
-            Log.i("Current Image - failure", it.second.message.orEmpty())
-            processCurrentImage(it.first)
+        viewBinding.runRoutine.setOnClickListener {
+            CoroutineScope(Dispatchers.IO).launch {
+                viewModel.downloadAndProcessImages()
+            }
+        }
+
+        viewBinding.stopRoutine.setOnClickListener {
+            CoroutineScope(Dispatchers.IO).launch {
+                viewModel.shouldStopRoutine = true
+            }
+        }
+
+        viewModel.currentImage.observe(this) {
+            Glide.with(this)
+                .load(it)
+                .into(viewBinding.imageView)
         }
 
         viewModel.jsonFile.observe(this){
             Log.i("Json - create mesh", it)
-            saveJsonToDownloadsDirectory(applicationContext, it, "data_set")
+//            saveJsonToDownloadsDirectory(applicationContext, it, "data_set")
         }
     }
 
@@ -68,58 +83,6 @@ class CreateMeshActivity : AppCompatActivity() {
             } else {
                 // Permissão negada, lide com isso de acordo com as necessidades do seu aplicativo
             }
-        }
-    }
-
-    private fun processCurrentImage(currentImage: Int){
-        val imageName = "user$currentImage.png"
-        viewBinding.textView.text = imageName
-        val inputStream = applicationContext.assets.open(imageName)
-        val bitmap = BitmapFactory.decodeStream(inputStream)
-        Glide.with(this)
-            .load(bitmap)
-            .into(viewBinding.imageView)
-        viewModel.addToDataSet(bitmap, currentImage, imageName)
-    }
-
-    @RequiresApi(Build.VERSION_CODES.Q)
-    private fun saveJsonToDownloadsDirectory(context: Context, json: String, fileName: String) {
-        val path = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS).absolutePath
-        var file = File(path, "$fileName.json")
-
-        if (file.exists()) {
-            file.delete()
-        }
-
-        val contentValues = ContentValues().apply {
-            put(MediaStore.Downloads.DISPLAY_NAME, "$fileName.json")
-            put(MediaStore.Downloads.MIME_TYPE, "application/json")
-            put(MediaStore.Downloads.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS)
-        }
-
-        val uri = context.contentResolver.insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, contentValues)
-
-        uri?.let {
-            context.contentResolver.openOutputStream(uri)?.use {
-                it.write(json.toByteArray())
-            }
-
-            file = File(path, "$fileName.json")
-
-            if (file.exists()) {
-                val uriShare = FileProvider.getUriForFile(context, "${context.packageName}.provider", file)
-
-                val shareIntent = Intent()
-                shareIntent.action = Intent.ACTION_SEND
-                shareIntent.putExtra(Intent.EXTRA_STREAM, uriShare)
-                intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                shareIntent.type = "text/json"
-                startActivity(Intent.createChooser(shareIntent, "Choose"))
-            }
-
-            Toast.makeText(context, "JSON file saved to Downloads directory", Toast.LENGTH_SHORT).show()
-        } ?: run {
-            Toast.makeText(context, "Failed to save JSON file", Toast.LENGTH_SHORT).show()
         }
     }
 
